@@ -392,7 +392,7 @@ const uint8_t BOS_DESCRIPTOR[29] PROGMEM= {
 extern bool _VENDOR_WEBUSB_REQUEST;
 
 uint16_t CALLBACK_USB_GetDescriptor(const uint16_t wValue,
-                                    const uint8_t wIndex,
+                                    const uint16_t wIndex,
                                     const void** const DescriptorAddress)
 {
 	const uint8_t  DescriptorType   = (wValue >> 8);

@@ -36,43 +36,61 @@
 #ifndef _USB_SERIAL_H_
 #define _USB_SERIAL_H_
 
-	/* Includes: */
-	#include <avr/io.h>
-	#include <avr/wdt.h>
-	#include <avr/interrupt.h>
-	#include <avr/power.h>
+/* Includes: */
+#include <avr/io.h>
+#include <avr/wdt.h>
+#include <avr/interrupt.h>
+#include <avr/power.h>
 
-	#include "Descriptors.h"
+#include "Descriptors.h"
 
-	#include <LUFA/Drivers/Board/LEDs.h>
-	#include <LUFA/Drivers/Peripheral/Serial.h>
-	#include <LUFA/Drivers/Misc/RingBuffer.h>
-	#include <LUFA/Drivers/USB/USB.h>
-	#include <LUFA/Platform/Platform.h>
+#include <LUFA/Drivers/Board/LEDs.h>
+#include <LUFA/Drivers/Peripheral/Serial.h>
+#include <LUFA/Drivers/Misc/RingBuffer.h>
+#include <LUFA/Drivers/USB/USB.h>
+#include <LUFA/Platform/Platform.h>
 
-	/* Macros: */
-	/** LED mask for the library LED driver, to indicate TX activity. */
-  #define LEDMASK_TX               LEDS_LED1
+/* Macros: */
+/** LED mask for the library LED driver, to indicate TX activity. */
+#define LEDMASK_TX               LEDS_LED1
 
-  /** LED mask for the library LED driver, to indicate RX activity. */
-  #define LEDMASK_RX               LEDS_LED2
+/** LED mask for the library LED driver, to indicate RX activity. */
+#define LEDMASK_RX               LEDS_LED2
 
-  /** LED mask for the library LED driver, to indicate that an error has occurred in the USB interface. */
-  #define LEDMASK_ERROR            (LEDS_LED1 | LEDS_LED2)
+/** LED mask for the library LED driver, to indicate that an error has occurred in the USB interface. */
+#define LEDMASK_ERROR            (LEDS_LED1 | LEDS_LED2)
 
-  /** LED mask for the library LED driver, to indicate that the USB interface is busy. */
-  #define LEDMASK_BUSY             (LEDS_LED1 | LEDS_LED2)
+/** LED mask for the library LED driver, to indicate that the USB interface is busy. */
+#define LEDMASK_BUSY             (LEDS_LED1 | LEDS_LED2)
 
-	/* Function Prototypes: */
-	void SetupHardware(void);
+/* Type Defines: */
+/** Type define for the Microsoft OS 2.0 Descriptor for the device. This must be defined in the
+ *  application code as the descriptor may contain sub-descriptors which can vary between devices,
+ *  and which identify which USB drivers Windows should use.
+ */
+typedef struct
+{
+    MS_OS_20_Descriptor_Set_Header_t        Header;
+    MS_OS_20_CCGP_Device_Descriptor         CCGP_Device;
+    MS_OS_20_Configuration_Subset_Header    Configuration1;
+    MS_OS_20_Function_Subset_Header         WebUSB_Function;
+    MS_OS_20_CompatibleID_Descriptor        CompatibleID;
+} MS_OS_20_Descriptor_t;
 
-	void EVENT_USB_Device_Connect(void);
-	void EVENT_USB_Device_Disconnect(void);
-	void EVENT_USB_Device_ConfigurationChanged(void);
-	void EVENT_USB_Device_ControlRequest(void);
+/* Function Prototypes: */
+void SetupHardware(void);
 
-	void EVENT_CDC_Device_LineEncodingChanged(USB_ClassInfo_CDC_Device_t* const CDCInterfaceInfo);
-	void EVENT_CDC_Device_ControLineStateChanged(USB_ClassInfo_CDC_Device_t* const CDCInterfaceInfo);
+void EVENT_USB_Device_Connect(void);
+
+void EVENT_USB_Device_Disconnect(void);
+
+void EVENT_USB_Device_ConfigurationChanged(void);
+
+void EVENT_USB_Device_ControlRequest(void);
+
+void EVENT_CDC_Device_LineEncodingChanged(USB_ClassInfo_CDC_Device_t *const CDCInterfaceInfo);
+
+void EVENT_CDC_Device_ControLineStateChanged(USB_ClassInfo_CDC_Device_t *const CDCInterfaceInfo);
 
 #endif
 

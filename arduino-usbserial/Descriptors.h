@@ -41,6 +41,10 @@
 
 #include <LUFA/Drivers/USB/USB.h>
 
+#include "Config/AppConfig.h"
+#include "WebUSBDevice.h"
+#include "MS_OS_20_Device.h"
+
 /* Product-specific definitions: */
 #define ARDUINO_UNO_PID         0x0001
 #define ARDUINO_MEGA2560_PID    0x0010
@@ -60,11 +64,11 @@
 /** Endpoint address of the CDC host-to-device data OUT endpoint. */
 #define CDC_RX_EPADDR                  (ENDPOINT_DIR_OUT | 2)
 
-/** Endpoint address of the CDC device-to-host data IN endpoint. */
-#define WEBUSB_TX_EPADDR               (ENDPOINT_DIR_IN  | 3)
-
-/** Endpoint address of the CDC host-to-device data OUT endpoint. */
-#define WEBUSB_RX_EPADDR               (ENDPOINT_DIR_OUT | 2)
+///** Endpoint address of the CDC device-to-host data IN endpoint. */
+//#define WEBUSB_TX_EPADDR               (ENDPOINT_DIR_IN  | 3)
+//
+///** Endpoint address of the CDC host-to-device data OUT endpoint. */
+//#define WEBUSB_RX_EPADDR               (ENDPOINT_DIR_OUT | 2)
 
 /** Size in bytes of the CDC device-to-host notification IN endpoint. */
 #define CDC_NOTIFICATION_EPSIZE        8
@@ -79,44 +83,29 @@
  */
 typedef struct
 {
-	USB_Descriptor_Configuration_Header_t    Config;
+	USB_Descriptor_Configuration_Header_t 	Config;
 
+	// Groups the two CDC Interfaces
+	USB_Descriptor_Interface_Association_t	Interface_Association;
 	// CDC Command Interface
-	USB_Descriptor_Interface_t               CDC_CCI_Interface;
-	USB_CDC_Descriptor_FunctionalHeader_t    CDC_Functional_Header;
-	USB_CDC_Descriptor_FunctionalACM_t       CDC_Functional_ACM;
-	USB_CDC_Descriptor_FunctionalUnion_t     CDC_Functional_Union;
-	USB_Descriptor_Endpoint_t                CDC_NotificationEndpoint;
+	USB_Descriptor_Interface_t              CDC_CCI_Interface;
+	USB_CDC_Descriptor_FunctionalHeader_t   CDC_Functional_Header;
+	USB_CDC_Descriptor_FunctionalACM_t      CDC_Functional_ACM;
+	USB_CDC_Descriptor_FunctionalUnion_t    CDC_Functional_Union;
+	USB_Descriptor_Endpoint_t               CDC_NotificationEndpoint;
 
 	// CDC Data Interface
-	USB_Descriptor_Interface_t               CDC_DCI_Interface;
-	USB_Descriptor_Endpoint_t                CDC_DataOutEndpoint;
-	USB_Descriptor_Endpoint_t                CDC_DataInEndpoint;
+	USB_Descriptor_Interface_t              CDC_DCI_Interface;
+	USB_Descriptor_Endpoint_t               CDC_DataOutEndpoint;
+	USB_Descriptor_Endpoint_t               CDC_DataInEndpoint;
+	// Alternative Interface during WebUSB access
+	USB_Descriptor_Interface_t				CDC_Null_Interface;
 
-	// WebUSB Data Interface
-	USB_Descriptor_Interface_t               WebUSB_DCI_Interface;
+	USB_Descriptor_Interface_t             	WebUSB_Null_Interface;
+	USB_Descriptor_Interface_t				WebUSB_DCI_Interface;
+	USB_Descriptor_Endpoint_t               WebUSB_DataOutEndpoint;
+	USB_Descriptor_Endpoint_t               WebUSB_DataInEndpoint;
 } USB_Descriptor_Configuration_t;
-
-typedef struct
-{
-  USB_Descriptor_Configuration_Header_t    Config;
-
-  USB_Descriptor_Interface_t               CDC_CCI_Interface;
-  USB_CDC_Descriptor_FunctionalHeader_t    CDC_Functional_Header;
-  USB_CDC_Descriptor_FunctionalACM_t       CDC_Functional_ACM;
-  USB_CDC_Descriptor_FunctionalUnion_t     CDC_Functional_Union;
-  USB_Descriptor_Endpoint_t                CDC_NotificationEndpoint;
-
-  USB_Descriptor_Interface_t               CDC_DCI_Interface;
-  USB_Descriptor_Endpoint_t                CDC_DataOutEndpoint;
-  USB_Descriptor_Endpoint_t                CDC_DataInEndpoint;
-
-  // WebUSB Data Interface
-  USB_Descriptor_Interface_t               WebUSB_DCI_Interface;
-  USB_Descriptor_Endpoint_t                WebUSB_DataOutEndpoint;
-  USB_Descriptor_Endpoint_t                WebUSB_DataInEndpoint;
-} WEBUSB_Descriptor_Configuration_t;
-
 
 /** Enum for the device interface descriptor IDs within the device. Each interface descriptor
  *  should have a unique ID index associated with it, which can be used to refer to the
@@ -147,4 +136,3 @@ uint16_t CALLBACK_USB_GetDescriptor(const uint16_t wValue,
                                     ATTR_WARN_UNUSED_RESULT ATTR_NON_NULL_PTR_ARG(3);
 
 #endif
-

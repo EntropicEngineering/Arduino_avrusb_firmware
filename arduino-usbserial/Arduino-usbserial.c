@@ -41,6 +41,9 @@
 
 #include "Arduino-usbserial.h"
 
+/** Toggle for WebUSB endpoints enabled from host. */
+static bool WebUSB_Enabled = false;
+
 /** Circular buffer to hold data from the host before it is sent to the device via the serial port. */
 static RingBuffer_t USBtoUSART_Buffer;
 
@@ -66,7 +69,6 @@ USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
 		.Config =
 			{
 				.ControlInterfaceNumber         = INTERFACE_ID_CDC_CCI,
-				.SecondaryControlInterfaceNumber   = INTERFACE_ID_WEBUSB_DCI,
 				.DataINEndpoint                 =
 					{
 						.Address                = CDC_TX_EPADDR,
@@ -87,7 +89,7 @@ USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
 					},
 			},
 	};
-
+/*
 USB_ClassInfo_CDC_Device_t VirtualSerial_WEBUSB_Interface =
 	{
 		.Config =
@@ -114,8 +116,7 @@ USB_ClassInfo_CDC_Device_t VirtualSerial_WEBUSB_Interface =
 					},
 			},
 	};
-
-extern bool _VENDOR_WEBUSB_REQUEST;
+ */
 
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
@@ -129,20 +130,12 @@ int main(void)
 
 	GlobalInterruptEnable();
 
-	USB_ClassInfo_CDC_Device_t* target_cdc;
-
 	for (;;)
 	{
-		if (_VENDOR_WEBUSB_REQUEST) {
-			target_cdc = &VirtualSerial_WEBUSB_Interface;
-		} else {
-			target_cdc = &VirtualSerial_CDC_Interface;
-		}
-
 		/* Only try to read in bytes from the CDC interface if the transmit buffer is not full */
 		if (!(RingBuffer_IsFull(&USBtoUSART_Buffer)))
 		{
-			int16_t ReceivedByte = CDC_Device_ReceiveByte(target_cdc);
+			int16_t ReceivedByte = CDC_Device_ReceiveByte(&VirtualSerial_CDC_Interface);
 
 			/* Store received byte into the USART transmit buffer */
 			if (!(ReceivedByte < 0))
@@ -152,7 +145,7 @@ int main(void)
 		uint16_t BufferCount = RingBuffer_GetCount(&USARTtoUSB_Buffer);
 		if (BufferCount)
 		{
-			Endpoint_SelectEndpoint(target_cdc->Config.DataINEndpoint.Address);
+			Endpoint_SelectEndpoint(VirtualSerial_CDC_Interface.Config.DataINEndpoint.Address);
 
 			/* Check if a packet is already enqueued to the host - if so, we shouldn't try to send more data
 			 * until it completes as there is a chance nothing is listening and a lengthy timeout could occur */
@@ -171,7 +164,7 @@ int main(void)
 				while (BytesToSend--)
 				{
 					/* Try to send the next byte of data to the host, abort if there is an error without dequeuing */
-					if (CDC_Device_SendByte(target_cdc,
+					if (CDC_Device_SendByte(&VirtualSerial_CDC_Interface,
 											RingBuffer_Peek(&USARTtoUSB_Buffer)) != ENDPOINT_READYWAIT_NoError)
 					{
 						break;
@@ -190,7 +183,7 @@ int main(void)
 		    Serial_SendByte(RingBuffer_Remove(&USBtoUSART_Buffer));
 		}
 
-		CDC_Device_USBTask(target_cdc);
+		CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
 		USB_USBTask();
 	}
 }
@@ -229,20 +222,145 @@ void SetupHardware(void)
 /** Event handler for the library USB Configuration Changed event. */
 void EVENT_USB_Device_ConfigurationChanged(void)
 {
-	if (_VENDOR_WEBUSB_REQUEST) {
-		CDC_Device_ConfigureEndpoints(&VirtualSerial_WEBUSB_Interface);
-	} else {
-		CDC_Device_ConfigureEndpoints(&VirtualSerial_CDC_Interface);
-	}
+	CDC_Device_ConfigureEndpoints(&VirtualSerial_CDC_Interface);
 }
+
+/** Event handler for the USB_Disconnect event. This indicates the device is no longer connected to the host and the
+ *  device should revert to default interfaces.
+ */
+void EVENT_USB_Device_Disconnect(void)
+{
+	/* Revert to default interfaces */
+	WebUSB_Enabled = false;
+}
+
+/** Microsoft OS 2.0 Descriptor. This is used by Windows to select the USB driver for the device.
+ *
+ *  For WebUSB in Chrome, the correct driver is WinUSB, which is selected via CompatibleID.
+ *
+ *  Additionally, while Chrome is built using libusb, a magic registry key needs to be set containing a GUID for
+ *  the device.
+ */
+const MS_OS_20_Descriptor_t PROGMEM MS_OS_20_Descriptor =
+	{
+		.Header =
+			{
+				.Length = CPU_TO_LE16(10),
+				.DescriptorType = CPU_TO_LE16(MS_OS_20_SET_HEADER_DESCRIPTOR),
+				.WindowsVersion = MS_OS_20_WINDOWS_VERSION,
+				.TotalLength = CPU_TO_LE16(MS_OS_20_DESCRIPTOR_SET_TOTAL_LENGTH)
+			},
+
+		.CCGP_Device =
+			{
+				.Length = CPU_TO_LE16(4),
+				.DescriptorType = MS_OS_20_FEATURE_CCGP_DEVICE
+			},
+
+		.Configuration1 =
+			{
+				.Length = CPU_TO_LE16(8),
+				.DescriptorType = MS_OS_20_SUBSET_HEADER_CONFIGURATION,
+				.ConfigurationValue = 1,
+				.Reserved = 0,
+				.TotalLength = CPU_TO_LE16(8 + 8 + 20)
+			},
+
+		.WebUSB_Function =
+			{
+		    	.Length = CPU_TO_LE16(8),
+		    	.DescriptorType = MS_OS_20_SUBSET_HEADER_FUNCTION,
+				.FirstInterface = INTERFACE_ID_WEBUSB_DCI,
+				.Reserved = 0,
+				.SubsetLength = CPU_TO_LE16(8 + 20)
+			},
+
+		.CompatibleID =
+			{
+				.Length = CPU_TO_LE16(20),
+				.DescriptorType = CPU_TO_LE16(MS_OS_20_FEATURE_COMPATBLE_ID),
+				.CompatibleID = u8"WINUSB\x00", // Automatically null-terminated to 8 bytes
+				.SubCompatibleID = {0, 0, 0, 0, 0, 0, 0, 0}
+			},
+	};
+
+/** URL descriptor string. This is a UTF-8 string containing a URL excluding the prefix. At least one of these must be
+ * 	defined and returned when the Landing Page descriptor index is requested.
+ */
+const WebUSB_URL_Descriptor_t PROGMEM WebUSB_LandingPage = WEBUSB_URL_DESCRIPTOR(1, u8"www.modkit.io");
 
 /** Event handler for the library USB Control Request reception event. */
 void EVENT_USB_Device_ControlRequest(void)
 {
-	if (_VENDOR_WEBUSB_REQUEST) {
-		CDC_Device_ProcessControlRequest(&VirtualSerial_WEBUSB_Interface);
-	} else {
-		CDC_Device_ProcessControlRequest(&VirtualSerial_CDC_Interface);
+	switch (USB_ControlRequest.bmRequestType) {
+		/* Set Interface is not handled by the library, as its function is application-specific */
+		case (REQDIR_HOSTTODEVICE | REQTYPE_STANDARD | REQREC_INTERFACE):
+			switch (USB_ControlRequest.bRequest) {
+				case REQ_SetInterface:
+					Endpoint_ClearSETUP();
+					Endpoint_ClearStatusStage();
+
+					/* Check if the host is enabling the WebUSB interfaces (setting AlternateSetting to 1) */
+					WebUSB_Enabled = ((USB_ControlRequest.wValue) != 0);
+					break;
+				default:
+					CDC_Device_ProcessControlRequest(&VirtualSerial_CDC_Interface);
+					break;
+			}
+		/* Handle Vendor Requests for WebUSB & MS OS 20 Descriptors */
+		case (REQDIR_DEVICETOHOST | REQTYPE_VENDOR | REQREC_DEVICE):
+			/* Free the endpoint for the next Request */
+			Endpoint_ClearSETUP();
+			switch (USB_ControlRequest.bRequest) {
+				case WEBUSB_VENDOR_CODE:
+					switch (USB_ControlRequest.wIndex) {
+						case WebUSB_RTYPE_GetURL:
+							switch (USB_ControlRequest.wValue) {
+								case WEBUSB_LANDING_PAGE_INDEX:
+									/* Write the descriptor data to the control endpoint */
+									Endpoint_Write_Control_PStream_LE(&WebUSB_LandingPage, WebUSB_LandingPage.Header.Size);
+									/* Release the endpoint after transaction. */
+									Endpoint_ClearOUT();
+									break;
+								default:    /* Stall transfer on invalid index. */
+									Endpoint_StallTransaction();
+									break;
+							}
+							break;
+						default:    /* Stall on unknown WebUSB request */
+							Endpoint_StallTransaction();
+							break;
+					}
+					break;
+				case MS_OS_20_VENDOR_CODE:
+					switch (USB_ControlRequest.wIndex) {
+						case MS_OS_20_DESCRIPTOR_INDEX:
+							/* Write the descriptor data to the control endpoint */
+							Endpoint_Write_Control_PStream_LE(&MS_OS_20_Descriptor, MS_OS_20_Descriptor.Header.TotalLength);
+							/* Release the endpoint after transaction. */
+							Endpoint_ClearOUT();
+							break;
+						case MS_OS_20_SET_ALT_ENUMERATION:
+							switch (USB_ControlRequest.wValue) {
+								case (MS_OS_20_ALTERNATE_ENUMERATION_CODE << 8):	// High byte
+									// Do something with alternate interface settings
+                                    break;
+                                default:	/* Unknown AltEnumCode */
+                                    Endpoint_StallTransaction();
+							}
+						default:    /* Stall on unknown MS OS 2.0 request */
+							Endpoint_StallTransaction();
+							break;
+					}
+					break;
+				default:    /* Stall on unknown bRequest / Vendor Code */
+					Endpoint_StallTransaction();
+					break;
+			}
+			break;
+		default:
+			CDC_Device_ProcessControlRequest(&VirtualSerial_CDC_Interface);
+			break;
 	}
 }
 

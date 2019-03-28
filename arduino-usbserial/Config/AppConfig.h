@@ -43,12 +43,10 @@
 #ifndef _APP_CONFIG_H_
 #define _APP_CONFIG_H_
 
-	#define GENERIC_REPORT_SIZE       8
-
 	#define WEBUSB_VENDOR_CODE 0x42
 	#define WEBUSB_LANDING_PAGE_INDEX 0
 
 	#define MS_OS_20_VENDOR_CODE 0x45     // Must be different than WEBUSB_VENDOR_CODE
-	#define MS_OS_20_DESCRIPTOR_SET_TOTAL_LENGTH (10 + 20)
+	#define MS_OS_20_DESCRIPTOR_SET_TOTAL_LENGTH (10 + 4 + 8 + 8 + 20)
 
 #endif

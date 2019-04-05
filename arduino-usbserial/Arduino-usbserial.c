@@ -89,34 +89,6 @@ USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
 					},
 			},
 	};
-/*
-USB_ClassInfo_CDC_Device_t VirtualSerial_WEBUSB_Interface =
-	{
-		.Config =
-			{
-				.ControlInterfaceNumber   		= INTERFACE_ID_WEBUSB_DCI,
-				.SecondaryControlInterfaceNumber   = INTERFACE_ID_CDC_CCI,
-				.DataINEndpoint		=
-					{
-						.Address                = WEBUSB_TX_EPADDR,
-						.Size                   = CDC_TXRX_EPSIZE,
-						.Banks                  = 1,
-					},
-				.DataOUTEndpoint		=
-					{
-						.Address                = WEBUSB_RX_EPADDR,
-						.Size                   = CDC_TXRX_EPSIZE,
-						.Banks                  = 1,
-					},
-				.NotificationEndpoint           =
-					{
-						.Address                = CDC_NOTIFICATION_EPADDR,
-						.Size                   = CDC_NOTIFICATION_EPSIZE,
-						.Banks                  = 1,
-					},
-			},
-	};
- */
 
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
@@ -232,6 +204,8 @@ void EVENT_USB_Device_Disconnect(void)
 {
 	/* Revert to default interfaces */
 	WebUSB_Enabled = false;
+	Endpoint_ClearSETUP();
+	Endpoint_ClearStatusStage();
 }
 
 /** Microsoft OS 2.0 Descriptor. This is used by Windows to select the USB driver for the device.
@@ -247,41 +221,68 @@ const MS_OS_20_Descriptor_t PROGMEM MS_OS_20_Descriptor =
 			{
 				.Length = CPU_TO_LE16(10),
 				.DescriptorType = CPU_TO_LE16(MS_OS_20_SET_HEADER_DESCRIPTOR),
-				.WindowsVersion = MS_OS_20_WINDOWS_VERSION,
+				.WindowsVersion = MS_OS_20_WINDOWS_VERSION_8_1,
 				.TotalLength = CPU_TO_LE16(MS_OS_20_DESCRIPTOR_SET_TOTAL_LENGTH)
 			},
 
-		.CCGP_Device =
-			{
-				.Length = CPU_TO_LE16(4),
-				.DescriptorType = MS_OS_20_FEATURE_CCGP_DEVICE
-			},
+//		.CCGP_Device =
+//			{
+//				.Length = CPU_TO_LE16(4),
+//				.DescriptorType = MS_OS_20_FEATURE_CCGP_DEVICE
+//			},
 
 		.Configuration1 =
 			{
 				.Length = CPU_TO_LE16(8),
-				.DescriptorType = MS_OS_20_SUBSET_HEADER_CONFIGURATION,
+				.DescriptorType = CPU_TO_LE16(MS_OS_20_SUBSET_HEADER_CONFIGURATION),
 				.ConfigurationValue = 1,
 				.Reserved = 0,
 				.TotalLength = CPU_TO_LE16(8 + 8 + 20)
 			},
 
-		.WebUSB_Function =
+		.CDC_Function =
 			{
-		    	.Length = CPU_TO_LE16(8),
-		    	.DescriptorType = MS_OS_20_SUBSET_HEADER_FUNCTION,
-				.FirstInterface = INTERFACE_ID_WEBUSB_DCI,
+				.Length = CPU_TO_LE16(8),
+				.DescriptorType = CPU_TO_LE16(MS_OS_20_SUBSET_HEADER_FUNCTION),
+				.FirstInterface = INTERFACE_ID_CDC_CCI,
 				.Reserved = 0,
 				.SubsetLength = CPU_TO_LE16(8 + 20)
 			},
 
-		.CompatibleID =
+		.CDC_CompatibleID =
+			{
+				.Length = CPU_TO_LE16(20),
+				.DescriptorType = CPU_TO_LE16(MS_OS_20_FEATURE_COMPATBLE_ID),
+				.CompatibleID = u8"USBSER\x00", // Automatically null-terminated to 8 bytes
+				.SubCompatibleID = {0, 0, 0, 0, 0, 0, 0, 0}
+			},
+
+		.WebUSB_Function =
+			{
+				.Length = CPU_TO_LE16(8),
+				.DescriptorType = CPU_TO_LE16(MS_OS_20_SUBSET_HEADER_FUNCTION),
+				.FirstInterface = INTERFACE_ID_WEBUSB,
+				.Reserved = 0,
+				.SubsetLength = CPU_TO_LE16(8 + 20 + 10 + 42 + 80)
+			},
+
+		.WebUSB_CompatibleID =
 			{
 				.Length = CPU_TO_LE16(20),
 				.DescriptorType = CPU_TO_LE16(MS_OS_20_FEATURE_COMPATBLE_ID),
 				.CompatibleID = u8"WINUSB\x00", // Automatically null-terminated to 8 bytes
 				.SubCompatibleID = {0, 0, 0, 0, 0, 0, 0, 0}
 			},
+		.WebUSB_RegistryData =
+			{
+				.Length = CPU_TO_LE16(10 + 42 + 80),
+				.DescriptorType = CPU_TO_LE16(MS_OS_20_FEATURE_REG_PROPERTY),
+				.PropertyDataType = CPU_TO_LE16(MS_OS_20_REG_MULTI_SZ),
+				.PropertyNameLength = CPU_TO_LE16(sizeof(MS_OS_20_REGISTRY_KEY)),
+				.PropertyName = MS_OS_20_REGISTRY_KEY, // 42 bytes
+				.PropertyDataLength = CPU_TO_LE16(sizeof(MS_OS_20_DEVICE_GUID_STRING_OF_STRING)),
+				.PropertyData = MS_OS_20_DEVICE_GUID_STRING_OF_STRING // 82 bytes
+			}
 	};
 
 /** URL descriptor string. This is a UTF-8 string containing a URL excluding the prefix. At least one of these must be
@@ -297,11 +298,10 @@ void EVENT_USB_Device_ControlRequest(void)
 		case (REQDIR_HOSTTODEVICE | REQTYPE_STANDARD | REQREC_INTERFACE):
 			switch (USB_ControlRequest.bRequest) {
 				case REQ_SetInterface:
-					Endpoint_ClearSETUP();
-					Endpoint_ClearStatusStage();
-
 					/* Check if the host is enabling the WebUSB interfaces (setting AlternateSetting to 1) */
 					WebUSB_Enabled = ((USB_ControlRequest.wValue) != 0);
+					Endpoint_ClearSETUP();
+					Endpoint_ClearStatusStage();
 					break;
 				default:
 					CDC_Device_ProcessControlRequest(&VirtualSerial_CDC_Interface);

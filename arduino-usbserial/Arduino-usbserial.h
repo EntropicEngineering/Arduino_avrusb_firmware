@@ -71,10 +71,12 @@
 typedef struct
 {
     MS_OS_20_Descriptor_Set_Header_t        Header;
-    MS_OS_20_CCGP_Device_Descriptor         CCGP_Device;
     MS_OS_20_Configuration_Subset_Header    Configuration1;
+    MS_OS_20_Function_Subset_Header         CDC_Function;
+    MS_OS_20_CompatibleID_Descriptor        CDC_CompatibleID; // USBSER.SYS driver for COM port
     MS_OS_20_Function_Subset_Header         WebUSB_Function;
-    MS_OS_20_CompatibleID_Descriptor        CompatibleID;
+    MS_OS_20_CompatibleID_Descriptor        WebUSB_CompatibleID; // WINUSB.SYS driver
+    MS_OS_20_Registry_Property_Descriptor   WebUSB_RegistryData;
 } MS_OS_20_Descriptor_t;
 
 /* Function Prototypes: */

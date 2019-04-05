@@ -47,6 +47,11 @@
 	#define WEBUSB_LANDING_PAGE_INDEX 0
 
 	#define MS_OS_20_VENDOR_CODE 0x45     // Must be different than WEBUSB_VENDOR_CODE
-	#define MS_OS_20_DESCRIPTOR_SET_TOTAL_LENGTH (10 + 4 + 8 + 8 + 20)
+
+    #define MS_OS_20_REGISTRY_KEY L"DeviceInterfaceGUIDs" //  20 characters + null, times 2 = 42 bytes
+    // python -c "import uuid;print('u\"{' + str(uuid.uuid4()) + '}\\\0\"')"
+    #define MS_OS_20_DEVICE_GUID_STRING_OF_STRING L"{94e78d93-4cbb-481f-b542-a74740d3a713}\0" // 39 characters + null, time 2 = 80 bytes
+
+	#define MS_OS_20_DESCRIPTOR_SET_TOTAL_LENGTH (10 + 8 + 8 + 20 + 8 + 20 + 10 + 42 + 80)
 
 #endif

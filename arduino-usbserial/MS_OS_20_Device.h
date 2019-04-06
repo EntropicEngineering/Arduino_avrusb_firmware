@@ -44,7 +44,9 @@
 
 		#define MS_OS_20_WINDOWS_VERSION_8_1 0x06030000 // Windows version (8.1)
 
+        #ifndef MS_OS_20_ALTERNATE_ENUMERATION_CODE
 		#define MS_OS_20_ALTERNATE_ENUMERATION_CODE 0 /**< Set to non-zero to enable Windows to allow device to return alternate USB descriptors. */
+        #endif
 
 		/** \brief Convenience macro to easily create device capability platform descriptors for the MS OS 2.0 platform.
 		 *

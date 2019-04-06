@@ -54,4 +54,9 @@
 
 	#define MS_OS_20_DESCRIPTOR_SET_TOTAL_LENGTH (10 + 8 + 8 + 20 + 8 + 20 + 10 + 42 + 80)
 
+//    #define MS_OS_20_ALTERNATE_ENUMERATION_CODE 1 /**< Set to non-zero to enable Windows to allow device to return alternate USB descriptors. */
+
+    #define DEFAULT_CONFIG_INDEX 1
+    #define WEBUSB_CONFIG_INDEX 2
+
 #endif

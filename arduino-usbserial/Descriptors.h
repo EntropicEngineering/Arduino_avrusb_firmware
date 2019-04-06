@@ -55,17 +55,6 @@
 #define ARDUINO_MEGAADKR3_PID   0x0044
 
 /* Macros: */
-///** Endpoint address of the CDC device-to-host notification IN endpoint. */
-//#define CDC_NOTIFICATION_EPADDR        (ENDPOINT_DIR_IN  | 2)
-//
-///** Endpoint address of the CDC device-to-host data IN endpoint. */
-//#define CDC_TX_EPADDR                  (ENDPOINT_DIR_IN  | 4)
-//
-///** Endpoint address of the CDC host-to-device data OUT endpoint. */
-//#define CDC_RX_EPADDR                  (ENDPOINT_DIR_OUT | 3)
-//
-//#define WEBUSB_OUT_EPADDR               (ENDPOINT_DIR_OUT  | 1)
-
 /** Endpoint address of the CDC device-to-host notification IN endpoint. */
 #define CDC_NOTIFICATION_EPADDR        (ENDPOINT_DIR_IN  | 1)
 
@@ -75,7 +64,9 @@
 /** Endpoint address of the CDC host-to-device data OUT endpoint. */
 #define CDC_RX_EPADDR                  (ENDPOINT_DIR_OUT | 2)
 
-#define WEBUSB_OUT_EPADDR               (ENDPOINT_DIR_OUT  | 4)
+#define WEBUSB_CDC_NOTIFICATION_EPADDR (ENDPOINT_DIR_IN  | 4)
+#define WEBUSB_CDC_TX_EPADDR           (ENDPOINT_DIR_IN  | 6)
+#define WEBUSB_CDC_RX_EPADDR           (ENDPOINT_DIR_OUT | 5)
 
 /** Size in bytes of the CDC device-to-host notification IN endpoint. */
 #define CDC_NOTIFICATION_EPSIZE        8
@@ -105,7 +96,10 @@ typedef struct
 	USB_Descriptor_Endpoint_t               CDC_DataOutEndpoint;
 	USB_Descriptor_Endpoint_t               CDC_DataInEndpoint;
 
-	USB_Descriptor_Interface_t             	WebUSB_Null_Interface;
+    USB_Descriptor_Interface_t             	WebUSB_CDC_Interface;
+    USB_Descriptor_Endpoint_t               WebUSB_CDC_NotificationEndpoint;
+    USB_Descriptor_Endpoint_t               WebUSB_CDC_DataOutEndpoint;
+    USB_Descriptor_Endpoint_t               WebUSB_CDC_DataInEndpoint;
 } USB_Descriptor_Configuration_t;
 
 /** Enum for the device interface descriptor IDs within the device. Each interface descriptor

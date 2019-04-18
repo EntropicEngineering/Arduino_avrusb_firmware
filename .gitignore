@@ -13,3 +13,4 @@ Documentation/
 obj/
 node_modules/
 distrib
+OLD_LUFA/

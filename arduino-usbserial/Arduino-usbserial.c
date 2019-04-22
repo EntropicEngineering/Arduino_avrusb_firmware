@@ -331,19 +331,19 @@ void EVENT_USB_Device_ControlRequest(void)
 		/* Handle Vendor Requests for WebUSB & MS OS 20 Descriptors */
 		case (REQDIR_DEVICETOHOST | REQTYPE_VENDOR | REQREC_DEVICE):
 			/* Free the endpoint for the next Request */
-			Endpoint_ClearSETUP();
 			switch (USB_ControlRequest.bRequest) {
 				case WEBUSB_VENDOR_CODE:
 					switch (USB_ControlRequest.wIndex) {
 						case WebUSB_RTYPE_GetURL:
 							switch (USB_ControlRequest.wValue) {
 								case WEBUSB_LANDING_PAGE_INDEX:
-								    WebUSB_Enabled = true;
-								    CDC_Device_ConfigureEndpoints(&WebUSB_VirtualSerial_CDC_Interface);
+                                    Endpoint_ClearSETUP();
 									/* Write the descriptor data to the control endpoint */
 									Endpoint_Write_Control_PStream_LE(&WebUSB_LandingPage, WebUSB_LandingPage.Header.Size);
 									/* Release the endpoint after transaction. */
-									Endpoint_ClearOUT();
+                                    Endpoint_ClearStatusStage();
+                                    WebUSB_Enabled = true;
+                                    CDC_Device_ConfigureEndpoints(&WebUSB_VirtualSerial_CDC_Interface);
 									break;
 								default:    /* Stall transfer on invalid index. */
 									Endpoint_StallTransaction();
@@ -358,14 +358,16 @@ void EVENT_USB_Device_ControlRequest(void)
 				case MS_OS_20_VENDOR_CODE:
 					switch (USB_ControlRequest.wIndex) {
 						case MS_OS_20_DESCRIPTOR_INDEX:
+                            Endpoint_ClearSETUP();
 							/* Write the descriptor data to the control endpoint */
 							Endpoint_Write_Control_PStream_LE(&MS_OS_20_Descriptor, MS_OS_20_Descriptor.Header.TotalLength);
 							/* Release the endpoint after transaction. */
-							Endpoint_ClearOUT();
+                            Endpoint_ClearStatusStage();
 							break;
 						case MS_OS_20_SET_ALT_ENUMERATION:
 							switch (USB_ControlRequest.wValue) {
 								case (MS_OS_20_ALTERNATE_ENUMERATION_CODE << 8):	// High byte
+                                    Endpoint_ClearSETUP();
 									// Do something with alternate interface settings
                                     break;
                                 default:	/* Unknown AltEnumCode */

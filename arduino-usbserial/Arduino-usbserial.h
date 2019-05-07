@@ -41,6 +41,7 @@
 #include <avr/wdt.h>
 #include <avr/interrupt.h>
 #include <avr/power.h>
+#include <avr/eeprom.h>
 
 #include "Descriptors.h"
 

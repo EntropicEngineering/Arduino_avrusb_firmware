@@ -42,7 +42,7 @@
 #include "Arduino-usbserial.h"
 
 /** Toggle for WebUSB endpoints enabled from host. */
-extern bool WebUSB_Enabled;
+extern uint8_t WebUSB_Enabled;
 
 /** Circular buffer to hold data from the host before it is sent to the device via the serial port. */
 static RingBuffer_t USBtoUSART_Buffer;
@@ -122,6 +122,8 @@ USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
 int main(void)
 {
 	SetupHardware();
+
+    WebUSB_Enabled = eeprom_read_byte((uint8_t *) WEBUSB_ENABLE_BYTE_ADDRESS) & 1;
 
 	RingBuffer_InitBuffer(&USBtoUSART_Buffer, USBtoUSART_Buffer_Data, sizeof(USBtoUSART_Buffer_Data));
 	RingBuffer_InitBuffer(&USARTtoUSB_Buffer, USARTtoUSB_Buffer_Data, sizeof(USARTtoUSB_Buffer_Data));
@@ -360,13 +362,6 @@ void EVENT_USB_Device_ControlRequest(void)
 									Endpoint_Write_Control_PStream_LE(&WebUSB_LandingPage, WebUSB_LandingPage.Header.Size);
 									/* Release the endpoint after transaction. */
                                     Endpoint_ClearStatusStage();
-                                    if (WebUSB_Enabled == false) {
-                                        WebUSB_Enabled = true;
-                                        LEDs_ToggleLEDs(LEDS_LED1);
-                                        USB_Detach();
-                                        USB_ResetInterface();
-                                        USB_Attach();
-                                    }
 									break;
 								default:    /* Stall transfer on invalid index. */
 									Endpoint_StallTransaction();
@@ -410,6 +405,33 @@ void EVENT_USB_Device_ControlRequest(void)
 					break;
 			}
 			break;
+        case (REQDIR_HOSTTODEVICE | REQTYPE_VENDOR | REQREC_DEVICE):
+            /* Free the endpoint for the next Request */
+            switch (USB_ControlRequest.bRequest) {
+                case WEBUSB_VENDOR_CODE:
+                    switch (USB_ControlRequest.wIndex) {
+                        case WebUSB_RTYPE_Enable:
+                            Endpoint_ClearSETUP();
+                            /* Update state, if necessary */
+                            if (WebUSB_Enabled != USB_ControlRequest.wValue & 1) {
+                                WebUSB_Enabled = USB_ControlRequest.wValue & 1;
+                                eeprom_write_byte((uint8_t *) WEBUSB_ENABLE_BYTE_ADDRESS, WebUSB_Enabled);
+                                Endpoint_ClearStatusStage();
+                                USB_Disable();
+//                                USB_Init();
+                            } else {
+                                Endpoint_ClearStatusStage();
+                            }
+                        default:    /* Stall on unknown MS OS 2.0 request */
+                            Endpoint_StallTransaction();
+                            break;
+                    }
+                    break;
+                default:    /* Stall on unknown bRequest / Vendor Code */
+                    Endpoint_StallTransaction();
+                    break;
+            }
+            break;
 		default:
 			CDC_Device_ProcessControlRequest(&VirtualSerial_CDC_Interface);
 			break;

@@ -59,4 +59,6 @@
 
     #define DEFAULT_CONFIG_INDEX 1
 
+    #define WEBUSB_ENABLE_BYTE_ADDRESS 0x45     // Must be between 0 and 512
+
 #endif

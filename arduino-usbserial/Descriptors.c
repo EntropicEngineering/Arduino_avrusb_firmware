@@ -37,7 +37,7 @@
 
 #include "Descriptors.h"
 
-bool WebUSB_Enabled = false;
+uint8_t WebUSB_Enabled = 0;
 
 /** Device descriptor structure. This descriptor, located in FLASH memory, describes the overall
  *  device characteristics, including the supported USB version, control endpoint size and the
@@ -352,6 +352,7 @@ const USB_Descriptor_String_t PROGMEM LanguageString = USB_STRING_DESCRIPTOR_ARR
  *  Descriptor.
  */
 const USB_Descriptor_String_t PROGMEM ManufacturerString = USB_STRING_DESCRIPTOR(L"Arduino (www.arduino.cc)");
+const USB_Descriptor_String_t PROGMEM ManufacturerString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino with WebUSB");
 
 /** Product descriptor string. This is a Unicode string containing the product's details in human readable form,
  *  and is read out upon request by the host when the appropriate string ID is requested, listed in the Device
@@ -359,22 +360,31 @@ const USB_Descriptor_String_t PROGMEM ManufacturerString = USB_STRING_DESCRIPTOR
  */
 #if (ARDUINO_MODEL_PID == ARDUINO_UNO_PID)
 const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Arduino UNO");
+const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino UNO with WebUSB");
 #elif (ARDUINO_MODEL_PID == ARDUINO_MEGA2560_PID)
 const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Arduino Mega 2560");
+const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino Mega 2560");
 #elif (ARDUINO_MODEL_PID == ARDUINO_USBSERIAL_PID)
 const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Arduino USB-Serial");
+const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino USB-Serial");
 #elif (ARDUINO_MODEL_PID == ARDUINO_MEGAADK_PID)
 const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Arduino Mega ADK");
+const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino Mega ADK");
 #elif (ARDUINO_MODEL_PID == ARDUINO_MEGA2560R3_PID)
 const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Arduino Mega 2560 R3");
+const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino Mega 2560 R3");
 #elif (ARDUINO_MODEL_PID == ARDUINO_UNOR3_PID)
 const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Arduino UNO R3");
+const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino UNO R3");
 #elif (ARDUINO_MODEL_PID == ARDUINO_MEGAADKR3_PID)
 const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Arduino Mega ADK R3");
+const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino Mega ADK R3");
 #elif (ARDUINO_MODEL_PID == ARDUINO_UNOR3_PID+0x200)
 const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Genuino UNO R3");
+const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Genuino UNO R3");
 #elif (ARDUINO_MODEL_PID == ARDUINO_MEGA2560R3_PID+0x200)
 const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Genuino Mega 2560 R3");
+const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Genuino Mega 2560 R3");
 #endif
 
 /** This function is called by the library when in device mode, and must be overridden (see library "USB Descriptors"
@@ -433,12 +443,22 @@ uint16_t CALLBACK_USB_GetDescriptor(const uint16_t wValue,
 					Size    = pgm_read_byte(&LanguageString.Header.Size);
 					break;
 				case STRING_ID_Manufacturer:
-					Address = &ManufacturerString;
-					Size    = pgm_read_byte(&ManufacturerString.Header.Size);
+				    if (WebUSB_Enabled) {
+                        Address = &ManufacturerString_WebUSB;
+                        Size    = pgm_read_byte(&ManufacturerString_WebUSB.Header.Size);
+				    } else {
+                        Address = &ManufacturerString;
+                        Size    = pgm_read_byte(&ManufacturerString.Header.Size);
+				    }
 					break;
 				case STRING_ID_Product:
-					Address = &ProductString;
-					Size    = pgm_read_byte(&ProductString.Header.Size);
+				    if (WebUSB_Enabled) {
+                        Address = &ProductString_WebUSB;
+                        Size    = pgm_read_byte(&ProductString_WebUSB.Header.Size);
+                    } else {
+                        Address = &ProductString;
+                        Size    = pgm_read_byte(&ProductString.Header.Size);
+				    }
 					break;
 			}
 			break;

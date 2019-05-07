@@ -79,6 +79,8 @@
 		enum WebUSB_Request_t
 		{
 			WebUSB_RTYPE_GetURL = 2, /**< Indicates the device should return the indicated WebUSB_URL descriptor. */
+			WebUSB_RTYPE_Enable = 3, /**< Indicates the device should enable/disable WebUSB functionality at the expense of other functionality.
+                                        * wValue of 1 for enable, 0 for disable. */
 		};
 
 		enum WebUSB_Descriptor_t

@@ -75,7 +75,7 @@
 #define CDC_TXRX_EPSIZE                64
 
 /* Shared state variable */
-extern bool WebUSB_Enabled;
+extern uint8_t WebUSB_Enabled;
 
 /* Type Defines: */
 /** Type define for the device configuration descriptor structure. This must be defined in the

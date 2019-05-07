@@ -42,7 +42,7 @@
 #include "Arduino-usbserial.h"
 
 /** Toggle for WebUSB endpoints enabled from host. */
-static bool WebUSB_Enabled = false;
+extern bool WebUSB_Enabled;
 
 /** Circular buffer to hold data from the host before it is sent to the device via the serial port. */
 static RingBuffer_t USBtoUSART_Buffer;
@@ -90,31 +90,31 @@ USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
 			},
 	};
 
-USB_ClassInfo_CDC_Device_t WebUSB_VirtualSerial_CDC_Interface =
-    {
-        .Config =
-            {
-                .ControlInterfaceNumber         = INTERFACE_ID_WEBUSB,
-                .DataINEndpoint                 =
-                    {
-                        .Address                = WEBUSB_CDC_TX_EPADDR,
-                        .Size                   = CDC_TXRX_EPSIZE,
-                        .Banks                  = 1,
-                    },
-                .DataOUTEndpoint                =
-                    {
-                        .Address                = WEBUSB_CDC_RX_EPADDR,
-                        .Size                   = CDC_TXRX_EPSIZE,
-                        .Banks                  = 1,
-                    },
-                .NotificationEndpoint           =
-                    {
-                        .Address                = WEBUSB_CDC_NOTIFICATION_EPADDR,
-                        .Size                   = CDC_NOTIFICATION_EPSIZE,
-                        .Banks                  = 1,
-                    },
-            },
-    };
+//USB_ClassInfo_CDC_Device_t WebUSB_VirtualSerial_CDC_Interface =
+//    {
+//        .Config =
+//            {
+//                .ControlInterfaceNumber         = INTERFACE_ID_WEBUSB,
+//                .DataINEndpoint                 =
+//                    {
+//                        .Address                = WEBUSB_CDC_TX_EPADDR,
+//                        .Size                   = CDC_TXRX_EPSIZE,
+//                        .Banks                  = 1,
+//                    },
+//                .DataOUTEndpoint                =
+//                    {
+//                        .Address                = WEBUSB_CDC_RX_EPADDR,
+//                        .Size                   = CDC_TXRX_EPSIZE,
+//                        .Banks                  = 1,
+//                    },
+//                .NotificationEndpoint           =
+//                    {
+//                        .Address                = WEBUSB_CDC_NOTIFICATION_EPADDR,
+//                        .Size                   = CDC_NOTIFICATION_EPSIZE,
+//                        .Banks                  = 1,
+//                    },
+//            },
+//    };
 
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
@@ -132,11 +132,11 @@ int main(void)
 
     for (;;)
 	{
-        if (WebUSB_Enabled) {
-            target_cdc = &WebUSB_VirtualSerial_CDC_Interface;
-        } else {
+//        if (WebUSB_Enabled) {
+//            target_cdc = &WebUSB_VirtualSerial_CDC_Interface;
+//        } else {
             target_cdc = &VirtualSerial_CDC_Interface;
-        }
+//        }
 
         /* Only try to read in bytes from the CDC interface if the transmit buffer is not full */
 		if (!(RingBuffer_IsFull(&USBtoUSART_Buffer)))
@@ -228,11 +228,11 @@ void SetupHardware(void)
 /** Event handler for the library USB Configuration Changed event. */
 void EVENT_USB_Device_ConfigurationChanged(void)
 {
-    if (WebUSB_Enabled) {
-        CDC_Device_ConfigureEndpoints(&WebUSB_VirtualSerial_CDC_Interface);
-    } else {
+//    if (WebUSB_Enabled) {
+//        CDC_Device_ConfigureEndpoints(&WebUSB_VirtualSerial_CDC_Interface);
+//    } else {
         CDC_Device_ConfigureEndpoints(&VirtualSerial_CDC_Interface);
-    }
+//    }
 }
 
 /** Event handler for the USB_Disconnect event. This indicates the device is no longer connected to the host and the
@@ -240,10 +240,9 @@ void EVENT_USB_Device_ConfigurationChanged(void)
  */
 void EVENT_USB_Device_Disconnect(void)
 {
-	/* Revert to default interfaces */
-	WebUSB_Enabled = false;
 	Endpoint_ClearSETUP();
 	Endpoint_ClearStatusStage();
+    CDC_Device_ConfigureEndpoints(&VirtualSerial_CDC_Interface);
 }
 
 /** Microsoft OS 2.0 Descriptor. This is used by Windows to select the USB driver for the device.
@@ -318,10 +317,29 @@ const MS_OS_20_Descriptor_t PROGMEM MS_OS_20_Descriptor =
 			}
 	};
 
+const MS_OS_20_Descriptor_WebUSB_t PROGMEM MS_OS_20_Descriptor_WebUSB =
+    {
+        .Header =
+            {
+                .Length = CPU_TO_LE16(10),
+                .DescriptorType = CPU_TO_LE16(MS_OS_20_SET_HEADER_DESCRIPTOR),
+                .WindowsVersion = MS_OS_20_WINDOWS_VERSION_8_1,
+                .TotalLength = CPU_TO_LE16(MS_OS_20_DESCRIPTOR_SET_TOTAL_LENGTH_WEBUSB)
+            },
+
+        .CompatibleID =
+            {
+                .Length = CPU_TO_LE16(20),
+                .DescriptorType = CPU_TO_LE16(MS_OS_20_FEATURE_COMPATBLE_ID),
+                .CompatibleID = u8"WINUSB\x00", // Automatically null-terminated to 8 bytes
+                .SubCompatibleID = {0, 0, 0, 0, 0, 0, 0, 0}
+            }
+    };
+
 /** URL descriptor string. This is a UTF-8 string containing a URL excluding the prefix. At least one of these must be
  * 	defined and returned when the Landing Page descriptor index is requested.
  */
-const WebUSB_URL_Descriptor_t PROGMEM WebUSB_LandingPage = WEBUSB_URL_DESCRIPTOR(1, u8"www.modkit.io");
+const WebUSB_URL_Descriptor_t PROGMEM WebUSB_LandingPage = WEBUSB_URL_DESCRIPTOR(1, u8"www.entropicengineering.com");
 
 /** Event handler for the library USB Control Request reception event. */
 void EVENT_USB_Device_ControlRequest(void)
@@ -342,8 +360,13 @@ void EVENT_USB_Device_ControlRequest(void)
 									Endpoint_Write_Control_PStream_LE(&WebUSB_LandingPage, WebUSB_LandingPage.Header.Size);
 									/* Release the endpoint after transaction. */
                                     Endpoint_ClearStatusStage();
-                                    WebUSB_Enabled = true;
-                                    CDC_Device_ConfigureEndpoints(&WebUSB_VirtualSerial_CDC_Interface);
+                                    if (WebUSB_Enabled == false) {
+                                        WebUSB_Enabled = true;
+                                        LEDs_ToggleLEDs(LEDS_LED1);
+                                        USB_Detach();
+                                        USB_ResetInterface();
+                                        USB_Attach();
+                                    }
 									break;
 								default:    /* Stall transfer on invalid index. */
 									Endpoint_StallTransaction();
@@ -360,7 +383,11 @@ void EVENT_USB_Device_ControlRequest(void)
 						case MS_OS_20_DESCRIPTOR_INDEX:
                             Endpoint_ClearSETUP();
 							/* Write the descriptor data to the control endpoint */
-							Endpoint_Write_Control_PStream_LE(&MS_OS_20_Descriptor, MS_OS_20_Descriptor.Header.TotalLength);
+							if (WebUSB_Enabled) {
+                                Endpoint_Write_Control_PStream_LE(&MS_OS_20_Descriptor_WebUSB, MS_OS_20_Descriptor_WebUSB.Header.TotalLength);
+							} else {
+                                Endpoint_Write_Control_PStream_LE(&MS_OS_20_Descriptor, MS_OS_20_Descriptor.Header.TotalLength);
+							}
 							/* Release the endpoint after transaction. */
                             Endpoint_ClearStatusStage();
 							break;

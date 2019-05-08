@@ -79,8 +79,8 @@ const USB_Descriptor_Device_t PROGMEM DeviceDescriptor_WebUSB =
 
         .Endpoint0Size          = FIXED_CONTROL_ENDPOINT_SIZE,
 
-        .VendorID               = 0x03EB,
-        .ProductID              = 0x206F,
+        .VendorID				= 0x2341, // Arduino
+        .ProductID              = ARDUINO_MODEL_PID,
         .ReleaseNumber          = VERSION_BCD(0,0,2),
 
         .ManufacturerStrIndex   = STRING_ID_Manufacturer,
@@ -245,36 +245,6 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 
             .InterfaceStrIndex      = NO_DESCRIPTOR
         },
-
-//    .WebUSB_CDC_NotificationEndpoint =
-//        {
-//            .Header                 = {.Size = sizeof(USB_Descriptor_Endpoint_t), .Type = DTYPE_Endpoint},
-//
-//            .EndpointAddress        = WEBUSB_CDC_NOTIFICATION_EPADDR,
-//            .Attributes             = (EP_TYPE_INTERRUPT | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
-//            .EndpointSize           = CDC_NOTIFICATION_EPSIZE,
-//            .PollingIntervalMS      = 0xFF
-//        },
-//
-//    .WebUSB_CDC_DataOutEndpoint =
-//        {
-//            .Header                 = {.Size = sizeof(USB_Descriptor_Endpoint_t), .Type = DTYPE_Endpoint},
-//
-//            .EndpointAddress        = WEBUSB_CDC_RX_EPADDR,
-//            .Attributes             = (EP_TYPE_BULK | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
-//            .EndpointSize           = CDC_TXRX_EPSIZE,
-//            .PollingIntervalMS      = 0x05
-//        },
-//
-//    .WebUSB_CDC_DataInEndpoint =
-//        {
-//            .Header                 = {.Size = sizeof(USB_Descriptor_Endpoint_t), .Type = DTYPE_Endpoint},
-//
-//            .EndpointAddress        = WEBUSB_CDC_TX_EPADDR,
-//            .Attributes             = (EP_TYPE_BULK | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
-//            .EndpointSize           = CDC_TXRX_EPSIZE,
-//            .PollingIntervalMS      = 0x05
-//        },
 };
 
 const USB_Descriptor_Configuration_WebUSB_t PROGMEM ConfigurationDescriptor_WebUSB =

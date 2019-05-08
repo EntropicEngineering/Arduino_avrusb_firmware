@@ -64,7 +64,7 @@ static volatile uint8_t RxLEDPulseTimer;
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
  *  within a device can be differentiated from one another.
  */
-USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
+const USB_ClassInfo_CDC_Device_t PROGMEM VirtualSerial_CDC_Interface =
 	{
 		.Config =
 			{
@@ -90,32 +90,6 @@ USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
 			},
 	};
 
-//USB_ClassInfo_CDC_Device_t WebUSB_VirtualSerial_CDC_Interface =
-//    {
-//        .Config =
-//            {
-//                .ControlInterfaceNumber         = INTERFACE_ID_WEBUSB,
-//                .DataINEndpoint                 =
-//                    {
-//                        .Address                = WEBUSB_CDC_TX_EPADDR,
-//                        .Size                   = CDC_TXRX_EPSIZE,
-//                        .Banks                  = 1,
-//                    },
-//                .DataOUTEndpoint                =
-//                    {
-//                        .Address                = WEBUSB_CDC_RX_EPADDR,
-//                        .Size                   = CDC_TXRX_EPSIZE,
-//                        .Banks                  = 1,
-//                    },
-//                .NotificationEndpoint           =
-//                    {
-//                        .Address                = WEBUSB_CDC_NOTIFICATION_EPADDR,
-//                        .Size                   = CDC_NOTIFICATION_EPSIZE,
-//                        .Banks                  = 1,
-//                    },
-//            },
-//    };
-
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
  */
@@ -130,20 +104,12 @@ int main(void)
 
 	GlobalInterruptEnable();
 
-    USB_ClassInfo_CDC_Device_t* target_cdc;
-
     for (;;)
 	{
-//        if (WebUSB_Enabled) {
-//            target_cdc = &WebUSB_VirtualSerial_CDC_Interface;
-//        } else {
-            target_cdc = &VirtualSerial_CDC_Interface;
-//        }
-
         /* Only try to read in bytes from the CDC interface if the transmit buffer is not full */
 		if (!(RingBuffer_IsFull(&USBtoUSART_Buffer)))
 		{
-			int16_t ReceivedByte = CDC_Device_ReceiveByte(target_cdc);
+			int16_t ReceivedByte = CDC_Device_ReceiveByte(&VirtualSerial_CDC_Interface);
 
 			/* Store received byte into the USART transmit buffer */
 			if (!(ReceivedByte < 0))
@@ -153,7 +119,7 @@ int main(void)
 		uint16_t BufferCount = RingBuffer_GetCount(&USARTtoUSB_Buffer);
 		if (BufferCount)
 		{
-			Endpoint_SelectEndpoint(target_cdc->Config.DataINEndpoint.Address);
+			Endpoint_SelectEndpoint(VirtualSerial_CDC_Interface.Config.DataINEndpoint.Address);
 
 			/* Check if a packet is already enqueued to the host - if so, we shouldn't try to send more data
 			 * until it completes as there is a chance nothing is listening and a lengthy timeout could occur */
@@ -172,7 +138,7 @@ int main(void)
 				while (BytesToSend--)
 				{
 					/* Try to send the next byte of data to the host, abort if there is an error without dequeuing */
-					if (CDC_Device_SendByte(target_cdc,
+					if (CDC_Device_SendByte(&VirtualSerial_CDC_Interface,
 											RingBuffer_Peek(&USARTtoUSB_Buffer)) != ENDPOINT_READYWAIT_NoError)
 					{
 						break;
@@ -191,7 +157,7 @@ int main(void)
 		    Serial_SendByte(RingBuffer_Remove(&USBtoUSART_Buffer));
 		}
 
-		CDC_Device_USBTask(target_cdc);
+		CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
 		USB_USBTask();
 	}
 }

@@ -79,8 +79,8 @@ const USB_Descriptor_Device_t PROGMEM DeviceDescriptor_WebUSB =
 
         .Endpoint0Size          = FIXED_CONTROL_ENDPOINT_SIZE,
 
-        .VendorID				= 0x2341, // Arduino
-        .ProductID              = ARDUINO_MODEL_PID,
+        .VendorID				= 0x04B9,
+        .ProductID              = 0x0AF1,
         .ReleaseNumber          = VERSION_BCD(0,0,2),
 
         .ManufacturerStrIndex   = STRING_ID_Manufacturer,

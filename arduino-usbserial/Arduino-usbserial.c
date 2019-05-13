@@ -196,11 +196,7 @@ void SetupHardware(void)
 /** Event handler for the library USB Configuration Changed event. */
 void EVENT_USB_Device_ConfigurationChanged(void)
 {
-//    if (WebUSB_Enabled) {
-//        CDC_Device_ConfigureEndpoints(&WebUSB_VirtualSerial_CDC_Interface);
-//    } else {
-        CDC_Device_ConfigureEndpoints(&VirtualSerial_CDC_Interface);
-//    }
+    CDC_Device_ConfigureEndpoints(&VirtualSerial_CDC_Interface);
 }
 
 /** Event handler for the USB_Disconnect event. This indicates the device is no longer connected to the host and the

@@ -172,7 +172,7 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 			.Header                 = {.Size = sizeof(USB_CDC_Descriptor_FunctionalACM_t), .Type = DTYPE_CSInterface},
 			.Subtype                = CDC_DSUBTYPE_CSInterface_ACM,
 
-			.Capabilities           = 0x06,
+			.Capabilities           = 0x06, /* Supports Network_Connection, Get_Line_Encoding, Set_Line_Encoding, Serial_State */
 		},
 
 	.CDC_Functional_Union =
@@ -333,22 +333,22 @@ const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Ar
 const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino UNO with WebUSB");
 #elif (ARDUINO_MODEL_PID == ARDUINO_MEGA2560_PID)
 const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Arduino Mega 2560");
-const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino Mega 2560");
+const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino Mega 2560 with WebUSB");
 #elif (ARDUINO_MODEL_PID == ARDUINO_USBSERIAL_PID)
 const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Arduino USB-Serial");
-const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino USB-Serial");
+const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino USB-Serial with WebUSB");
 #elif (ARDUINO_MODEL_PID == ARDUINO_MEGAADK_PID)
 const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Arduino Mega ADK");
-const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino Mega ADK");
+const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino Mega ADK with WebUSB");
 #elif (ARDUINO_MODEL_PID == ARDUINO_MEGA2560R3_PID)
 const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Arduino Mega 2560 R3");
-const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino Mega 2560 R3");
+const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino Mega 2560 R3 with WebUSB");
 #elif (ARDUINO_MODEL_PID == ARDUINO_UNOR3_PID)
 const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Arduino UNO R3");
-const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino UNO R3");
+const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino UNO R3 with WebUSB");
 #elif (ARDUINO_MODEL_PID == ARDUINO_MEGAADKR3_PID)
 const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Arduino Mega ADK R3");
-const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino Mega ADK R3");
+const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Arduino Mega ADK R3 with WebUSB");
 #elif (ARDUINO_MODEL_PID == ARDUINO_UNOR3_PID+0x200)
 const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Genuino UNO R3");
 const USB_Descriptor_String_t PROGMEM ProductString_WebUSB = USB_STRING_DESCRIPTOR(L"Genuino UNO R3");

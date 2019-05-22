@@ -70,8 +70,44 @@ Put the device in DFU mode by shorting reset & ground pins.
  
 Run `$ dfu-programmer atmega16u2 flash arduino-usbserial/Arduino-usbserial.hex`
 
+###### Building Firmware
+
+The makefile needs to know what device to build for: `$ ARDUINO_MODEL_PID=0x0043 make`
+
 Initializing Connection
 -----------------------
+
+#### WebUSB
+
+    let device = await navigator.usb.requestDevice({ filters:[] });
+
+To filter by VID/PID: `requestDevice({ filters:[{ vendorId: 0x04B9, productId: 0x0AF1 }] });`
+
+    await device.open();
+    if ( device.configuration === null ) {
+        await device.selectConfiguration(1);
+    }
+    
+When in USB-serial mode, the device has 3 interfaces, and we need to claim #2. When in WebUSB mode, the device has one
+interface, #0, which we need to claim.
+
+    await device.claimInterface(device.configuration.interfaces.length - 1);
+    
+If device isn't in WebUSB mode, put it in WebUSB mode. Note this causes the connection to stall out & requires that the
+user physically disconnect and reconnect the device (due to OS security features).
+
+    if ( device.configuration.interfaces.length === 3 ) {
+        device.controlTransferOut({
+            'requestType': 'vendor',
+            'recipient': 'device',
+            'request': 0x42,    // Device-specific ID, provided via BOS descriptor. (See WebUSB spec for details)
+            'value': 1,         // 1 to enable WebUSB descriptors, 0 for default USB-serial descriptors
+            'index': 3          // New WebUSB request code
+        });     // This promise will likely throw an error.
+        // Handle reconnecting to a (logically) new device.
+    }
+
+#### USB-serial
 
 Despite USB being able to communicate fully with the device, establishing a USB-serial connection still requires
 sending USB commands to configure a virtual serial device.
@@ -105,3 +141,29 @@ sending USB commands to configure a virtual serial device.
     * 'value' byte, bit 0: DTR (1 is high)
     * 'value' byte, bit 1: Carrier (1 is active)
 
+Echo Test
+---------
+
+Flash `serial_echo.ino.hex` onto the Atmega328.
+
+```$js
+function receiver({device, interface, size}) {
+    return async function() {
+   
+    const result = await device.transferIn(interface, size);
+    if ( result.status !== "ok" ) {
+        throw new Error(`Transfer in failed with statuts: ${result.status}`);
+    }
+    const data_view = result.data;
+    return Array.from(new Uint8Array(data_view.buffer))
+}}
+
+async function poll(fn) {
+    console.log(await fn());
+    setTimeout(() => poll(fn), 0);
+}
+
+poll(receiver({device, interface:3, size:64}));
+
+await device.transferOut(2, Uint8Array.from([1, 2, 3, 4]).buffer);
+```

@@ -69,3 +69,39 @@ Install `dfu-programmer`
 Put the device in DFU mode by shorting reset & ground pins.
  
 Run `$ dfu-programmer atmega16u2 flash arduino-usbserial/Arduino-usbserial.hex`
+
+Initializing Connection
+-----------------------
+
+Despite USB being able to communicate fully with the device, establishing a USB-serial connection still requires
+sending USB commands to configure a virtual serial device.
+
+1. Set line config:
+
+        let data_view = new DataView(new ArrayBuffer(7));
+        data_view.setUint32(0, 115200, true);   // Baud rate
+        data_view.setUint8(4, 0);               // 1 stop bit
+        data_view.setUint8(5, 0);               // No parity bits
+        data_view.setUint8(6, 8);               // 8 data bits
+
+        await device.controlTransferOut({
+            'requestType': 'class',
+            'recipient': 'interface',
+            'request': 0x20, //Set Line Coding
+            'value': 0,
+            'index': 0
+        }, data_view.buffer);
+
+2. Set control line state:
+
+        await device.controlTransferOut({
+            'requestType': 'class',
+            'recipient': 'interface',
+            'request': 0x22, //Set Control Line State
+            'value': 3,
+            'index': 0
+        });
+        
+    * 'value' byte, bit 0: DTR (1 is high)
+    * 'value' byte, bit 1: Carrier (1 is active)
+

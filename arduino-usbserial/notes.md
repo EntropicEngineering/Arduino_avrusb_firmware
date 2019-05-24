@@ -62,6 +62,8 @@ Arduino provides instructions [here](https://www.arduino.cc/en/Hacking/DFUProgra
 
 Instead of their firmware, use `arduino-usbserial/Arduino-usbserial.hex`
 
+After flashing, the device needs to be un- & re-plugged to switch back to normal operation.
+
 ##### Quick OSX/Linux reference
 
 Install `dfu-programmer`

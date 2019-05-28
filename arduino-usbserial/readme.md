@@ -29,6 +29,11 @@ Compiling will require having `avr-gcc` installed and available on your `$PATH`.
 
 The `makefile` needs to know what device to build for, so either uncomment the appropriate line, or set the proper
  environment variable:`$ ARDUINO_MODEL_PID=0x0043 make`
+ 
+###### LUFA
+
+This firmware is built using [LUFA](http://www.fourwalledcubicle.com/LUFA.php), which is included as a submodule in this
+repository. Currently, it's based on a local fork of LUFA, pending an upstream PR.
 
 Initializing Connection
 -----------------------

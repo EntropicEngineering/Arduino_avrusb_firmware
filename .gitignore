@@ -1,5 +1,3 @@
-lufa/LUFA/Drivers/*
-distrib
 *.o
 *.d
 *.elf
@@ -11,3 +9,8 @@ distrib
 *.map
 *.bak
 *.class
+Documentation/
+obj/
+node_modules/
+distrib
+OLD/
